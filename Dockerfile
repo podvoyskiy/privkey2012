@@ -157,9 +157,7 @@ RUN set -xe \
 
 # Enable GOST engine
 RUN set -xe \
-
     && OPENSSL_ENGINES_DIR=$(/usr/local/ssl/bin/openssl version -e | sed  's/.*\"\(.*\)\".*/\1/') \
-
     && sed -i '6i openssl_conf=openssl_def' /usr/local/ssl/openssl.cnf \
     && echo "" >> /usr/local/ssl/openssl.cnf \
     && echo "# OpenSSL default section" >> /usr/local/ssl/openssl.cnf \
@@ -183,5 +181,8 @@ RUN set -xe \
     && update-ca-certificates \
     && rm -f /usr/local/share/ca-certificates/gost-ca-certificates.pem
 
-ENTRYPOINT ["./privkey2012"]
+COPY run.sh /usr/local/src/run.sh
+RUN chmod +x ./run.sh
+
+ENTRYPOINT ["./run.sh"]
 
