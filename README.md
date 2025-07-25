@@ -2,7 +2,7 @@
 
 [![Build docker and push](https://github.com/iliadmitriev/privkey2012/actions/workflows/docker-build-and-push.yml/badge.svg)](https://github.com/iliadmitriev/privkey2012/actions/workflows/docker-build-and-push.yml)
 
-This tool is used to extract private key from CryptoPRO storage format using GOST R 34.10-2012 format
+This tool is used to extract private key and certificate from CryptoPRO storage format using GOST R 34.10-2012 format
 
 Storage is a folder with files:
 ```
@@ -46,8 +46,8 @@ docker build -t privkey2012 ./
 Change path `~/storage.001` to your storage path
 and run:
 ```
-docker run --rm -ti -v ~/storage.001:/usr/local/src/storage.001 privkey2012 storage.001
+docker run --rm -ti -v ~/storage.001:/usr/local/src/storage privkey2012
 ```
 
-Your key will be output to stdout
+Private key and certificate will be output to stdout
 

@@ -108,6 +108,7 @@ RUN set -xe \
 
 # Build privkey2012 tool
 COPY privkey2012.c /usr/local/src/privkey2012.c
+COPY cert2012.c /usr/local/src/cert2012.c
 
 RUN set -xe \
 # RPATH crutch
@@ -128,6 +129,14 @@ RUN set -xe \
 	engine/gost_params.c engine/e_gost_err.c \
         engine/gost_ctl.c \
 	privkey2012.c -lcrypto -lssl -pthread -ldl -static -lgost_core \
+    && gcc -o cert2012 -Iengine  -I/usr/local/ssl/include \
+        -L/usr/local/src/engine/build \
+        -L/usr/local/src/openssl-${OPENSSL_VERSION} \
+        -L${SSL_LIB} \
+	engine/gost_ameth.c engine/gost_asn1.c \
+	engine/gost_params.c engine/e_gost_err.c \
+        engine/gost_ctl.c \
+	cert2012.c -lcrypto -lssl -pthread -ldl -static -lgost_core \
     && rm -rf "/usr/local/src/engine" "/usr/local/src/openssl-${OPENSSL_VERSION}" /tmp/*
 
 ## -- Runtime Container -- ##
@@ -149,6 +158,7 @@ RUN set -xe \
 COPY --from=BUILDER /usr/local/ssl/ /usr/local/ssl/
 COPY --from=BUILDER /usr/local/curl/ /usr/local/curl/
 COPY --from=BUILDER /usr/local/src/privkey2012 ./privkey2012
+COPY --from=BUILDER /usr/local/src/cert2012 ./cert2012
 
 RUN set -xe \
     && ln -sf /usr/local/ssl/bin/openssl /usr/bin/openssl \
