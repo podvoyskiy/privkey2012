@@ -49,5 +49,7 @@ and run:
 docker run --rm -ti -v ~/storage.001:/usr/local/src/storage privkey2012
 ```
 
+When prompted, enter the container password (or press Enter if no password was set).
+
 Private key and certificate will be output to stdout
 

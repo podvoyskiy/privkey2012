@@ -10,6 +10,9 @@
 #include "gosthash2012.h"
 //#include "applink.c"
 
+#include <termios.h>
+#include <unistd.h>
+
 #define MAX_HEADER 20000
 char header_buf[MAX_HEADER];
 int header_len;
@@ -364,11 +367,47 @@ err:
 	return result;
 }
 
+void get_password(char *password, size_t max_len) {
+    struct termios oldt, newt;
+    int i = 0;
+    char ch;
+    
+    fprintf(stderr, "Enter password for container: ");
+    fflush(stderr);
+    
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~(ECHO | ICANON);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+    
+    while (i < max_len - 1) {
+        ch = getchar();
+        if (ch == '\n' || ch == '\r') break;
+        if (ch == 127 || ch == 8) {
+            if (i > 0) {
+                i--;
+                fprintf(stderr, "\b \b");
+                fflush(stderr);
+            }
+            continue;
+        }
+        if (ch >= 32 && ch <= 126) {
+            password[i++] = ch;
+            fprintf(stderr, "*");
+            fflush(stderr);
+        }
+    }
+    password[i] = '\0';
+    
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    fprintf(stderr, "\n");
+}
+
 int main(int argc, char **argv)
 {
 	int result;
 	char *container_path;
-	char *passw;
+	char passw[256] = {0};
 	char salt12[12];
 	char primary_key[64];
 	char masks_key[64];
@@ -387,23 +426,15 @@ int main(int argc, char **argv)
 
 	ctx = BN_CTX_new();
 
-	if (argc == 2)
-	{
-		container_path = argv[1];
-		passw = "";
-	}
-	else
-	if (argc == 3)
-	{
-		container_path = argv[1];
-		passw = argv[2];
-	}
-	else
-	{
-		printf("privkey cpro_container_path [passw]\n");
+	if (argc < 2) {
+		printf("container path required\n");
 		result = 1;
 		goto err;
-	}
+    }
+
+	container_path = argv[1];
+	
+	get_password(passw, sizeof(passw));
 
 	if (read_container(container_path, 0, salt12, primary_key, masks_key, public8, &param_set) != 0 &&
 		read_container(container_path, 1, salt12, primary_key, masks_key, public8, &param_set) != 0)
@@ -422,6 +453,7 @@ int main(int argc, char **argv)
 		make_pwd_key(pwd_key, salt12, 12, passw);
 	key_with_mask = decode_primary_key(pwd_key, primary_key, ctx, len_material, flag_z_list[param_set]);
 	OPENSSL_cleanse(pwd_key, sizeof(pwd_key));
+	OPENSSL_cleanse(passw, sizeof(passw));
 	mask = reverse_bn(masks_key, len_material, ctx);
 	raw_key = remove_mask_and_check_public(oid_publ_key, key_with_mask, mask, public8, ctx);
 
